@@ -27,9 +27,6 @@ public class UserService : IUserService
 
     public async Task<IdentityResult> RegisterAsync(string email, string password, bool makeAdmin = true)
     {
-        await EnsureRoleWithClaimAsync("Admin", "permission", "admin-creation");
-        await EnsureRoleWithClaimAsync("ExcelWorker", "permission", "excel");
-
         var user = new User { UserName = email, Email = email };
         var result = await _userManager.CreateAsync(user, password);
         if (!result.Succeeded) return result;
@@ -52,7 +49,6 @@ public class UserService : IUserService
     {
         await _signInManager.SignOutAsync();
     }
-
 
     public async Task<IdentityResult> DeleteUserAsync(string userId)
     {
