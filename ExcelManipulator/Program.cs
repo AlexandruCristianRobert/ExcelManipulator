@@ -33,7 +33,6 @@ namespace ExcelManipulator
                 .AddInMemoryApiScopes(Config.ApiScopes)
                 .AddInMemoryClients(Config.Clients)
                 .AddProfileService<ProfileService>();
-
             builder.Services.AddAuthentication()
                 .AddJwtBearer("Bearer", opts =>
                 {
