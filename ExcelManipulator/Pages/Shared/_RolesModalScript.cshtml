@@ -1,0 +1,14 @@
+﻿<script>
+    const modalEl = document.getElementById('rolesModal');
+    modalEl.addEventListener('show.bs.modal', event => {
+        const button = event.relatedTarget;
+        const userId = button.getAttribute('data-user-id');
+        const email = button.getAttribute('data-user-email');
+        const roles = button.getAttribute('data-user-roles').split(',').filter(r => r);
+
+        modalEl.querySelector('input[name="UpdateRolesInput.UserId"]').value = userId;
+        modalEl.querySelector('input[name="UpdateRolesInput.Email"]').value = email;
+        const select = modalEl.querySelector('select[name="UpdateRolesInput.SelectedRoles"]');
+        Array.from(select.options).forEach(o => o.selected = roles.includes(o.value));
+    });
+</script>

@@ -35,11 +35,13 @@
                                 }
                             </td>
                             <td class="text-center">
+                                <button class="btn btn-sm btn-primary me-2" data-bs-toggle="modal" data-bs-target="#rolesModal"
+                                        data-user-id="@u.Id" data-user-email="@u.Email" data-user-roles="@string.Join(',', u.Roles)">
+                                    Edit
+                                </button>
+
                                 <form asp-page-handler="Delete" method="post" asp-route-id="@u.Id" class="d-inline">
-                                    <button type="submit" class="btn btn-sm btn-danger"
-                                            onclick="return confirm('Delete user @u.Email?');">
-                                        Delete
-                                    </button>
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete user @u.Email?');">Delete</button>
                                 </form>
                             </td>
                         </tr>
@@ -48,11 +50,16 @@
                 }
                 else
                 {
-                    <tr>
-                        <td colspan="4" class="text-center">No users found.</td>
-                    </tr>
+                    <tr><td colspan="4" class="text-center">No users found.</td></tr>
                 }
             </tbody>
         </table>
     </div>
 </div>
+
+<!-- Render shared modal component -->
+<partial name="_RolesModal" model="Model" />
+
+@section Scripts {
+    <partial name="_RolesModalScript" />
+}

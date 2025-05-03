@@ -56,19 +56,26 @@
         </div>
     </footer>
 
-    @if (TempData["Status"] is string toastMsg)
-    {
-        <script>
-            toastr.options = { "closeButton": true, "timeOut": 4000 };
-            toastr.info("@toastMsg");
-        </script>
-    }
+   
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+
+    @if (TempData["Status"] is string toastMsg)
+    {
+        <script>
+               toastr.options = {
+                "closeButton": true,
+                "timeOut": 4000,
+                "positionClass": "toast-bottom-right" 
+            };
+            toastr.info("@toastMsg");
+        </script>
+    }
     @RenderSection("Scripts", required: false)
 </body>
 </html>
