@@ -72,7 +72,7 @@ public class UsersModel : PageModel
 
     private async Task PopulateAsync()
     {
-        Users = await _userService.GetUsersAsync(excludeSeedAdmin: true);
+        Users = (List<IUserService.UserWithRoles>)await _userService.GetUsersAsync(excludeSeedAdmin: true);
         RoleSelectList = (await _userService.GetAllRolesAsync())
                          .Select(r => new SelectListItem(r, r))
                          .ToList();

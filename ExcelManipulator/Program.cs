@@ -82,7 +82,7 @@ namespace ExcelManipulator
                 var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
                 db.Database.Migrate();           
             }
-            await IdentitySeeder.SeedAsync(app.Services);
+            //await IdentitySeeder.SeedAsync(app.Services);
 
             app.UseStaticFiles();
             app.UseRouting();

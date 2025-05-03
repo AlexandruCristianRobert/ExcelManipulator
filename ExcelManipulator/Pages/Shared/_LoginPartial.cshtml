@@ -8,13 +8,13 @@
     {
         var currentUser = await UserManager.GetUserAsync(User);
         <li class="nav-item">
-            <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">
+            <a class="nav-link" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">
                 <i class="bi bi-person-circle me-1"></i> @currentUser.Email
             </a>
         </li>
         <li class="nav-item">
             <form id="logoutForm" asp-area="Identity" asp-page="/Account/Logout" method="post" class="d-inline">
-                <button type="submit" class="nav-link btn btn-link text-dark p-0">
+                <button type="submit" class="nav-link btn btn-link p-0">
                     <i class="bi bi-box-arrow-right me-1"></i> Logout
                 </button>
             </form>
@@ -23,12 +23,12 @@
     else
     {
         <li class="nav-item">
-            <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Register">
+            <a class="nav-link" asp-area="Identity" asp-page="/Account/Register">
                 <i class="bi bi-person-plus me-1"></i> Register
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Login">
+            <a class="nav-link" asp-area="Identity" asp-page="/Account/Login">
                 <i class="bi bi-box-arrow-in-right me-1"></i> Login
             </a>
         </li>

@@ -147,8 +147,8 @@ namespace ExcelManipulator.Services
         public async Task<IList<IUserService.UserWithRoles>> GetUsersAsync(bool excludeSeedAdmin = true)
         {
             var query = _userManager.Users.AsQueryable();
-            if (excludeSeedAdmin)
-                query = query.Where(u => u.Email != SeedAdminEmail);
+            //if (excludeSeedAdmin)
+            //    query = query.Where(u => u.Email != SeedAdminEmail);
 
             var list = new List<IUserService.UserWithRoles>();
             foreach (var u in query)
