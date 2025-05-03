@@ -56,55 +56,57 @@ namespace ExcelManipulator.Services
         public async Task LogoutAsync() => await _signInManager.SignOutAsync();
 
         /* ───────────── External / Google OAuth ───────────── */
-        public async Task<SignInResult> ExternalLoginAsync(ExternalLoginInfo info, bool isPersistent = false)
+        public async Task<SignInResult> ExternalLoginAsync(
+        ExternalLoginInfo info, bool isPersistent = false)
         {
-            // Try to sign‑in the user if a login record already exists.
-            var existingSignIn = await _signInManager.ExternalLoginSignInAsync(
-                                        info.LoginProvider,
-                                        info.ProviderKey,
-                                        isPersistent,
-                                        bypassTwoFactor: true);
+            // 1 — Already linked?  Easy path.
+            var signIn = await _signInManager.ExternalLoginSignInAsync(
+                            info.LoginProvider,
+                            info.ProviderKey,
+                            isPersistent,
+                            bypassTwoFactor: true);
 
-            if (existingSignIn.Succeeded)
+            if (signIn.Succeeded || signIn.IsLockedOut || signIn.RequiresTwoFactor)
+                return signIn;
+
+            /* 🔶 2 — Check if a local account with the same e‑mail already exists.
+                    If it does, just attach the Google login to it.               */
+            var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+            User? user = null;
+
+            if (!string.IsNullOrWhiteSpace(email))
+                user = await _userManager.FindByEmailAsync(email);
+
+            if (user is not null)               // local account found → link & sign‑in
             {
-                _logger.LogInformation("External sign‑in succeeded via {Provider} for key {Key}", info.LoginProvider, info.ProviderKey);
-                return existingSignIn; // includes LockedOut / RequiresTwoFactor cases
+                var link = await _userManager.AddLoginAsync(user, info);
+                if (!link.Succeeded) return SignInResult.Failed;
+
+                await _signInManager.SignInAsync(user, isPersistent);
+                return SignInResult.Success;
             }
 
-            // First‑time external user → create local account (no roles) and tie the login.
-            var email = info.Principal.FindFirstValue(ClaimTypes.Email) ??
-                        $"{Guid.NewGuid()}@{info.LoginProvider.ToLowerInvariant()}.external";
+            /* 3 — No account yet → create a new one (your old code). */
+            email ??= $"{Guid.NewGuid()}@{info.LoginProvider}.external";
 
-            var user = new User
+            user = new User
             {
                 UserName = email,
                 Email = email,
-                EmailConfirmed = true // Google already verified it
+                EmailConfirmed = true
             };
 
-            var createUser = await _userManager.CreateAsync(user);
-            if (!createUser.Succeeded)
-            {
-                _logger.LogWarning("External registration failed via {Provider}: {Errors}",
-                                   info.LoginProvider,
-                                   string.Join("; ", createUser.Errors.Select(e => e.Description)));
-                return SignInResult.Failed;
-            }
+            var create = await _userManager.CreateAsync(user);
+            if (!create.Succeeded) return SignInResult.Failed;
 
-            var addLogin = await _userManager.AddLoginAsync(user, info);
-            if (!addLogin.Succeeded)
+            var add = await _userManager.AddLoginAsync(user, info);
+            if (!add.Succeeded)
             {
-                // Roll‑back user creation to keep DB clean.
-                await _userManager.DeleteAsync(user);
-                _logger.LogWarning("AddLogin failed for user {Id}: {Errors}",
-                                   user.Id,
-                                   string.Join("; ", addLogin.Errors.Select(e => e.Description)));
+                await _userManager.DeleteAsync(user);   // roll back to stay tidy
                 return SignInResult.Failed;
             }
 
             await _signInManager.SignInAsync(user, isPersistent);
-            _logger.LogInformation("External user {Id} created & signed‑in via {Provider}", user.Id, info.LoginProvider);
-
             return SignInResult.Success;
         }
 

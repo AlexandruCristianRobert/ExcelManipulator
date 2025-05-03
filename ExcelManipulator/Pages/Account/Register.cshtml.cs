@@ -55,6 +55,12 @@ namespace ExcelManipulator.Areas.Identity.Pages.Account
         /* ---------------------------------------------------- */
         public async Task OnGetAsync(string returnUrl = null)
         {
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                Response.Redirect(Url.Content("~/"));
+                return;
+            }
+
             ReturnUrl = returnUrl ?? Url.Content("~/");
             ExternalLogins = (await _schemeProvider.GetAllSchemesAsync())
                               .Where(s => !string.IsNullOrEmpty(s.DisplayName) || s.Name == "Google")

@@ -46,20 +46,15 @@ namespace ExcelManipulator
                         NameClaimType = JwtClaimTypes.Name    
                     };
                 })
-                .AddGoogle("Google", googleOptions =>      
-                {
-                    googleOptions.SignInScheme =
-                        IdentityServerConstants.ExternalCookieAuthenticationScheme;
-
-                    googleOptions.ClientId =
-                        builder.Configuration["Authentication:Google:ClientId"];
-                    googleOptions.ClientSecret =
-                        builder.Configuration["Authentication:Google:ClientSecret"];
-
-                    googleOptions.Scope.Add("email");
-                    googleOptions.Scope.Add("profile");
-                    googleOptions.SaveTokens = true;     
-                });
+               .AddGoogle("Google", options =>
+               {
+                   options.SignInScheme = IdentityConstants.ExternalScheme; 
+                   options.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+                   options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+                   options.Scope.Add("email");
+                   options.Scope.Add("profile");
+                   options.SaveTokens = true;
+               });
 
             builder.Services.ConfigureApplicationCookie(o =>
             {
@@ -82,7 +77,7 @@ namespace ExcelManipulator
                 var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
                 db.Database.Migrate();           
             }
-            //await IdentitySeeder.SeedAsync(app.Services);
+            await IdentitySeeder.SeedAsync(app.Services);
 
             app.UseStaticFiles();
             app.UseRouting();
