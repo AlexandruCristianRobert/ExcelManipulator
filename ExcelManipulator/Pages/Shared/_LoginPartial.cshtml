@@ -1,0 +1,27 @@
+﻿@using ExcelManipulator.Data
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<User> SignInManager
+@inject UserManager<User> UserManager
+
+<ul class="navbar-nav ms-auto">
+    @if (SignInManager.IsSignedIn(User))
+    {
+        <li class="nav-item me-2">
+            <span class="navbar-text">Hello, @(UserManager.GetUserName(User))!</span>
+        </li>
+        <li class="nav-item">
+            <form class="d-inline" asp-page="/Account/Logout" method="post">
+                <button type="submit" class="btn btn-link nav-link px-0">Logout</button>
+            </form>
+        </li>
+    }
+    else
+    {
+        <li class="nav-item">
+            <a class="nav-link" asp-page="/Account/Login">Login</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" asp-page="/Account/Register">Register</a>
+        </li>
+    }
+</ul>

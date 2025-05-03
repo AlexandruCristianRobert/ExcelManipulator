@@ -1,0 +1,22 @@
+﻿@page
+@using ExcelManipulator.Data
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<User> SignInManager
+@inject UserManager<User> UserManager
+@{
+    ViewData["Title"] = "Home";
+    bool isSignedIn = SignInManager.IsSignedIn(User);
+    string? userEmail = isSignedIn ? UserManager.GetUserName(User) : null;
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+            <h1 class="display-5 fw-bold mb-3">Excel Manipulator Demo</h1>
+            <p class="lead mb-4">
+                A minimal app to manipulate excel files and google drive excel files
+            </p>
+
+        </div>
+    </div>
+</div>
