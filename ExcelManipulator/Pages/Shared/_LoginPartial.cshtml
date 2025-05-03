@@ -1,27 +1,36 @@
-﻿@using ExcelManipulator.Data
-@using Microsoft.AspNetCore.Identity
+﻿@using Microsoft.AspNetCore.Identity
+@using ExcelManipulator.Data
 @inject SignInManager<User> SignInManager
 @inject UserManager<User> UserManager
 
-<ul class="navbar-nav ms-auto">
+<ul class="navbar-nav flex-row gap-2">
     @if (SignInManager.IsSignedIn(User))
     {
-        <li class="nav-item me-2">
-            <span class="navbar-text">Hello, @(UserManager.GetUserName(User))!</span>
+        var currentUser = await UserManager.GetUserAsync(User);
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">
+                <i class="bi bi-person-circle me-1"></i> @currentUser.Email
+            </a>
         </li>
         <li class="nav-item">
-            <form class="d-inline" asp-page="/Account/Logout" method="post">
-                <button type="submit" class="btn btn-link nav-link px-0">Logout</button>
+            <form id="logoutForm" asp-area="Identity" asp-page="/Account/Logout" method="post" class="d-inline">
+                <button type="submit" class="nav-link btn btn-link text-dark p-0">
+                    <i class="bi bi-box-arrow-right me-1"></i> Logout
+                </button>
             </form>
         </li>
     }
     else
     {
         <li class="nav-item">
-            <a class="nav-link" asp-page="/Account/Login">Login</a>
+            <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Register">
+                <i class="bi bi-person-plus me-1"></i> Register
+            </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" asp-page="/Account/Register">Register</a>
+            <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Login">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Login
+            </a>
         </li>
     }
 </ul>

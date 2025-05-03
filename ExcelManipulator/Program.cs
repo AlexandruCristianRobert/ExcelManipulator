@@ -4,6 +4,8 @@ using ExcelManipulator.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Duende.IdentityServer;
+using Microsoft.AspNetCore.Authentication.Google;
 
 namespace ExcelManipulator
 {
@@ -43,7 +45,26 @@ namespace ExcelManipulator
                         RoleClaimType = JwtClaimTypes.Role,   
                         NameClaimType = JwtClaimTypes.Name    
                     };
+                })
+                .AddGoogle("Google", googleOptions =>      
+                {
+                    googleOptions.SignInScheme =
+                        IdentityServerConstants.ExternalCookieAuthenticationScheme;
+
+                    googleOptions.ClientId =
+                        builder.Configuration["Authentication:Google:ClientId"];
+                    googleOptions.ClientSecret =
+                        builder.Configuration["Authentication:Google:ClientSecret"];
+
+                    googleOptions.Scope.Add("email");
+                    googleOptions.Scope.Add("profile");
+                    googleOptions.SaveTokens = true;     
                 });
+
+            builder.Services.ConfigureApplicationCookie(o =>
+            {
+                o.Cookie.SameSite = SameSiteMode.None; 
+            });
 
             builder.Services.AddAuthorization(options =>
             {
@@ -66,8 +87,8 @@ namespace ExcelManipulator
             app.UseStaticFiles();
             app.UseRouting();
 
-            app.UseIdentityServer();
             app.UseAuthentication();
+            app.UseIdentityServer();
             app.UseAuthorization();
 
             app.MapRazorPages();

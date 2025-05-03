@@ -1,70 +1,91 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
+using ExcelManipulator.Data;
+using ExcelManipulator.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Logging;
-using ExcelManipulator.Services;          // ◄─ your service
-using Microsoft.AspNetCore.Identity;      // for IdentityResult
 
-namespace ExcelManipulator.Pages.Account;
-
-public class RegisterModel : PageModel
+namespace ExcelManipulator.Areas.Identity.Pages.Account
 {
-    private readonly IUserService _userService;
-    private readonly ILogger<RegisterModel> _logger;
-
-    public RegisterModel(IUserService userService,
-                         ILogger<RegisterModel> logger)
+    [AllowAnonymous]
+    [ValidateAntiForgeryToken]
+    public class RegisterModel : PageModel
     {
-        _userService = userService;
-        _logger = logger;
-    }
+        private readonly IUserService _userService;
+        private readonly SignInManager<User> _signInManager;
+        private readonly IAuthenticationSchemeProvider _schemeProvider;
 
-    [BindProperty] public InputModel Input { get; set; } = default!;
-
-    public string? ReturnUrl { get; set; }
-
-    public class InputModel
-    {
-        [Required, EmailAddress]
-        public string Email { get; set; } = default!;
-
-        [Required, DataType(DataType.Password), MinLength(8)]
-        public string Password { get; set; } = default!;
-
-        [Required, DataType(DataType.Password),
-         Compare(nameof(Password), ErrorMessage = "Passwords must match.")]
-        public string ConfirmPassword { get; set; } = default!;
-    }
-
-    public void OnGet(string? returnUrl = null) => ReturnUrl = returnUrl ?? Url.Content("~/");
-
-    public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
-    {
-        ReturnUrl ??= Url.Content("~/");
-
-        if (!ModelState.IsValid)
-            return Page();
-
-        // 1) create the account (service seeds roles/claims internally)
-        IdentityResult result = await _userService.RegisterAsync(
-                                    Input.Email,
-                                    Input.Password,
-                                    makeAdmin: true);
-
-        if (result.Succeeded)
+        public RegisterModel(IUserService userService,
+                             SignInManager<User> signInManager,
+                             IAuthenticationSchemeProvider schemeProvider)
         {
-            // 2) sign the user in right away
-            await _userService.LoginAsync(Input.Email, Input.Password, rememberMe: false);
-            TempData["Status"] = "Registration successful, you are now signed in!";
-            _logger.LogInformation("New user {Email} registered and signed in.", Input.Email);
-
-            return LocalRedirect(ReturnUrl);
+            _userService = userService;
+            _signInManager = signInManager;
+            _schemeProvider = schemeProvider;
         }
 
-        // 3) surface Identity errors back to the form
-        foreach (var error in result.Errors)
-            ModelState.AddModelError(string.Empty, error.Description);
+        /* ---------------------------------------------------- */
+        /* View‑model                                           */
+        /* ---------------------------------------------------- */
+        public IList<AuthenticationScheme> ExternalLogins { get; private set; }
+        public string ReturnUrl { get; set; }
 
-        return Page();
+        [BindProperty]
+        public InputModel Input { get; set; } = new();
+
+        public class InputModel
+        {
+            [Required, EmailAddress]
+            [Display(Name = "Email address")]
+            public string Email { get; set; }
+
+            [Required, DataType(DataType.Password)]
+            [StringLength(100, ErrorMessage = "{0} must be at least {2} and at most {1} characters long.", MinimumLength = 6)]
+            public string Password { get; set; }
+
+            [DataType(DataType.Password), Display(Name = "Confirm password"), Compare("Password", ErrorMessage = "Passwords do not match.")]
+            public string ConfirmPassword { get; set; }
+        }
+
+        /* ---------------------------------------------------- */
+        /* GET                                                  */
+        /* ---------------------------------------------------- */
+        public async Task OnGetAsync(string returnUrl = null)
+        {
+            ReturnUrl = returnUrl ?? Url.Content("~/");
+            ExternalLogins = (await _schemeProvider.GetAllSchemesAsync())
+                              .Where(s => !string.IsNullOrEmpty(s.DisplayName) || s.Name == "Google")
+                              .ToList();
+        }
+
+        /* ---------------------------------------------------- */
+        /* POST                                                 */
+        /* ---------------------------------------------------- */
+        public async Task<IActionResult> OnPostAsync(string returnUrl = null)
+        {
+            ReturnUrl = returnUrl ?? Url.Content("~/");
+            if (!ModelState.IsValid)
+            {
+                await OnGetAsync(ReturnUrl);
+                return Page();
+            }
+
+            var result = await _userService.RegisterAsync(Input.Email, Input.Password, makeAdmin: false);
+            if (result.Succeeded)
+            {
+                var user = await _signInManager.UserManager.FindByEmailAsync(Input.Email);
+                await _signInManager.SignInAsync(user, isPersistent: false);
+                return LocalRedirect(ReturnUrl);
+            }
+
+            foreach (var error in result.Errors)
+                ModelState.AddModelError(string.Empty, error.Description);
+
+            await OnGetAsync(ReturnUrl);
+            return Page();
+        }
     }
 }
