@@ -1,26 +1,21 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.Security.Claims;
-using ExcelManipulator.Data;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Logging;
+using ExcelManipulator.Services;          // ◄─ your service
+using Microsoft.AspNetCore.Identity;      // for IdentityResult
+
+namespace ExcelManipulator.Pages.Account;
 
 public class RegisterModel : PageModel
 {
-    private readonly UserManager<User> _userManager;
-    private readonly SignInManager<User> _signInManager;
-    private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly IUserService _userService;
     private readonly ILogger<RegisterModel> _logger;
 
-    public RegisterModel(
-        UserManager<User> userManager,
-        SignInManager<User> signInManager,
-        RoleManager<IdentityRole> roleManager,
-        ILogger<RegisterModel> logger)
+    public RegisterModel(IUserService userService,
+                         ILogger<RegisterModel> logger)
     {
-        _userManager = userManager;
-        _signInManager = signInManager;
-        _roleManager = roleManager;
+        _userService = userService;
         _logger = logger;
     }
 
@@ -41,7 +36,7 @@ public class RegisterModel : PageModel
         public string ConfirmPassword { get; set; } = default!;
     }
 
-    public void OnGet(string? returnUrl = null) => ReturnUrl = returnUrl;
+    public void OnGet(string? returnUrl = null) => ReturnUrl = returnUrl ?? Url.Content("~/");
 
     public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
     {
@@ -50,51 +45,26 @@ public class RegisterModel : PageModel
         if (!ModelState.IsValid)
             return Page();
 
-        // Ensure roles exist with their claims (admin & excel‑worker)
-        await EnsureRoleWithClaimAsync("Admin", new Claim("permission", "admin-creation"));
-        await EnsureRoleWithClaimAsync("ExcelWorker", new Claim("permission", "excel"));
-
-        var user = new User { UserName = Input.Email, Email = Input.Email };
-        var result = await _userManager.CreateAsync(user, Input.Password);
+        // 1) create the account (service seeds roles/claims internally)
+        IdentityResult result = await _userService.RegisterAsync(
+                                    Input.Email,
+                                    Input.Password,
+                                    makeAdmin: true);
 
         if (result.Succeeded)
         {
-            // Make every newly‑registered user an Admin by default.
-            await _userManager.AddToRoleAsync(user, "Admin");
+            // 2) sign the user in right away
+            await _userService.LoginAsync(Input.Email, Input.Password, rememberMe: false);
+            TempData["Status"] = "Registration successful, you are now signed in!";
+            _logger.LogInformation("New user {Email} registered and signed in.", Input.Email);
 
-            // Optionally sign the user in immediately.
-            await _signInManager.SignInAsync(user, isPersistent: false);
-            _logger.LogInformation("User {UserId} created and added to Admin role.", user.Id);
             return LocalRedirect(ReturnUrl);
         }
 
+        // 3) surface Identity errors back to the form
         foreach (var error in result.Errors)
             ModelState.AddModelError(string.Empty, error.Description);
 
         return Page();
-    }
-
-    private async Task EnsureRoleWithClaimAsync(string roleName, Claim claim)
-    {
-        var role = await _roleManager.FindByNameAsync(roleName);
-        if (role == null)
-        {
-            role = new IdentityRole(roleName);
-            var roleResult = await _roleManager.CreateAsync(role);
-            if (!roleResult.Succeeded)
-            {
-                throw new InvalidOperationException($"Could not create {roleName} role: {string.Join(',', roleResult.Errors.Select(e => e.Description))}");
-            }
-        }
-
-        var roleClaims = await _roleManager.GetClaimsAsync(role);
-        if (!roleClaims.Any(c => c.Type == claim.Type && c.Value == claim.Value))
-        {
-            var claimResult = await _roleManager.AddClaimAsync(role, claim);
-            if (!claimResult.Succeeded)
-            {
-                throw new InvalidOperationException($"Could not add claim {claim} to role {roleName}: {string.Join(',', claimResult.Errors.Select(e => e.Description))}");
-            }
-        }
     }
 }

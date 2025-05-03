@@ -1,17 +1,21 @@
 using System.ComponentModel.DataAnnotations;
-using ExcelManipulator.Data;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Logging;
+using ExcelManipulator.Services;
+using Microsoft.AspNetCore.Identity;
+
+namespace ExcelManipulator.Pages.Account;
 
 public class LoginModel : PageModel
 {
-    private readonly SignInManager<User> _signInManager;
+    private readonly IUserService _userService;
     private readonly ILogger<LoginModel> _logger;
 
-    public LoginModel(SignInManager<User> signInManager, ILogger<LoginModel> logger)
+    public LoginModel(IUserService userService,
+                      ILogger<LoginModel> logger)
     {
-        _signInManager = signInManager;
+        _userService = userService;
         _logger = logger;
     }
 
@@ -41,21 +45,18 @@ public class LoginModel : PageModel
         ReturnUrl ??= Url.Content("~/");
 
         if (!ModelState.IsValid)
-        {
             return Page();
-        }
 
-        var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password,
-            Input.RememberMe, lockoutOnFailure: true);
+        Microsoft.AspNetCore.Identity.SignInResult result = await _userService.LoginAsync(Input.Email, Input.Password, Input.RememberMe);
 
         if (result.Succeeded)
         {
-            _logger.LogInformation("User logged in.");
+            _logger.LogInformation("User {Email} logged in.", Input.Email);
             return LocalRedirect(ReturnUrl);
         }
         if (result.IsLockedOut)
         {
-            _logger.LogWarning("User account locked out.");
+            _logger.LogWarning("User account locked out: {Email}", Input.Email);
             ModelState.AddModelError(string.Empty, "Account locked out.");
             return Page();
         }

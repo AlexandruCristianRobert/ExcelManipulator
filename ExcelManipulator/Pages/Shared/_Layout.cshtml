@@ -11,6 +11,8 @@
     <title>@ViewData["Title"] - RazorAuthDemo</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" />
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
 </head>
 <body class="d-flex flex-column min-vh-100">
     <header>
@@ -31,6 +33,12 @@
                             <a class="nav-link" asp-page="/Excel/Excel">Excel Upload</a>
                         </li>
                         }
+                        @if (SignInManager.IsSignedIn(User) && User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-page="/Admin/Users">Users</a>
+                            </li>
+                        }
                     </ul>
                     <partial name="_LoginPartial" />
                 </div>
@@ -48,10 +56,19 @@
         </div>
     </footer>
 
+    @if (TempData["Status"] is string toastMsg)
+    {
+        <script>
+            toastr.options = { "closeButton": true, "timeOut": 4000 };
+            toastr.info("@toastMsg");
+        </script>
+    }
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     @RenderSection("Scripts", required: false)
 </body>
 </html>

@@ -1,0 +1,58 @@
+﻿@page
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin")]
+@model UsersModel
+@{
+    ViewData["Title"] = "User Management";
+}
+
+<div class="container py-5">
+    <h2 class="mb-4 text-center">All Registered Users</h2>
+
+    <div class="table-responsive shadow-sm">
+        <table class="table table-striped align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Roles</th>
+                    <th scope="col" class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Users.Any())
+                {
+                    int index = 1;
+                    foreach (var u in Model.Users)
+                    {
+                        <tr>
+                            <th scope="row">@index</th>
+                            <td>@u.Email</td>
+                            <td>
+                                @foreach (var r in u.Roles)
+                                {
+                                    <span class="badge bg-secondary me-1">@r</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <form asp-page-handler="Delete" method="post" asp-route-id="@u.Id" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-danger"
+                                            onclick="return confirm('Delete user @u.Email?');">
+                                        Delete
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        index++;
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="4" class="text-center">No users found.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
